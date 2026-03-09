@@ -1,0 +1,8 @@
+C:/Users/leolo/Desktop/lol/build/CMakeFiles/ALL_BUILD.dir
+C:/Users/leolo/Desktop/lol/build/CMakeFiles/ZERO_CHECK.dir
+C:/Users/leolo/Desktop/lol/build/core/CMakeFiles/dma_debugger_core.dir
+C:/Users/leolo/Desktop/lol/build/analysis/CMakeFiles/dma_analysis.dir
+C:/Users/leolo/Desktop/lol/build/scripting/CMakeFiles/dma_capi.dir
+C:/Users/leolo/Desktop/lol/build/plugins/CMakeFiles/plugin_example.dir
+C:/Users/leolo/Desktop/lol/build/tools/CMakeFiles/dump_tool.dir
+C:/Users/leolo/Desktop/lol/build/tools/CMakeFiles/analyzer.dir

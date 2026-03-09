@@ -1,0 +1,60 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="C:\Users\leolo\Desktop\lol\analysis\static_analysis\static_analyzer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\leolo\Desktop\lol\analysis\static_analysis\pe_scanner.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\leolo\Desktop\lol\analysis\static_analysis\pattern_scanner.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\leolo\Desktop\lol\analysis\dynamic_analysis\dynamic_analyzer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\leolo\Desktop\lol\analysis\scanners\entropy_scanner.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\leolo\Desktop\lol\analysis\symbol_resolver\symbol_resolver.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\leolo\Desktop\lol\analysis\intelligence\automated_intelligence.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="C:\Users\leolo\Desktop\lol\analysis\static_analysis\static_analyzer.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\leolo\Desktop\lol\analysis\static_analysis\pe_scanner.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\leolo\Desktop\lol\analysis\static_analysis\pattern_scanner.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\leolo\Desktop\lol\analysis\dynamic_analysis\dynamic_analyzer.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\leolo\Desktop\lol\analysis\scanners\entropy_scanner.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\leolo\Desktop\lol\analysis\symbol_resolver\symbol_resolver.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\leolo\Desktop\lol\analysis\intelligence\automated_intelligence.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\leolo\Desktop\lol\analysis\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{91BBA4E3-4659-3C71-8522-37884A28BF4E}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{69C8DF43-FFE7-3593-B91C-A083C1B7F5B9}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

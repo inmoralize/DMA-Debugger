@@ -1,0 +1,7 @@
+C:\Users\leolo\Desktop\lol\analysis\static_analysis\static_analyzer.cpp;C:\Users\leolo\Desktop\lol\build\analysis\dma_analysis.dir\Release\static_analyzer.obj
+C:\Users\leolo\Desktop\lol\analysis\static_analysis\pe_scanner.cpp;C:\Users\leolo\Desktop\lol\build\analysis\dma_analysis.dir\Release\pe_scanner.obj
+C:\Users\leolo\Desktop\lol\analysis\static_analysis\pattern_scanner.cpp;C:\Users\leolo\Desktop\lol\build\analysis\dma_analysis.dir\Release\pattern_scanner.obj
+C:\Users\leolo\Desktop\lol\analysis\dynamic_analysis\dynamic_analyzer.cpp;C:\Users\leolo\Desktop\lol\build\analysis\dma_analysis.dir\Release\dynamic_analyzer.obj
+C:\Users\leolo\Desktop\lol\analysis\scanners\entropy_scanner.cpp;C:\Users\leolo\Desktop\lol\build\analysis\dma_analysis.dir\Release\entropy_scanner.obj
+C:\Users\leolo\Desktop\lol\analysis\symbol_resolver\symbol_resolver.cpp;C:\Users\leolo\Desktop\lol\build\analysis\dma_analysis.dir\Release\symbol_resolver.obj
+C:\Users\leolo\Desktop\lol\analysis\intelligence\automated_intelligence.cpp;C:\Users\leolo\Desktop\lol\build\analysis\dma_analysis.dir\Release\automated_intelligence.obj

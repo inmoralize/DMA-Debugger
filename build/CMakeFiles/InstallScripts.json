@@ -1,0 +1,12 @@
+{
+	"InstallScripts" : 
+	[
+		"C:/Users/leolo/Desktop/lol/build/cmake_install.cmake",
+		"C:/Users/leolo/Desktop/lol/build/core/cmake_install.cmake",
+		"C:/Users/leolo/Desktop/lol/build/analysis/cmake_install.cmake",
+		"C:/Users/leolo/Desktop/lol/build/scripting/cmake_install.cmake",
+		"C:/Users/leolo/Desktop/lol/build/plugins/cmake_install.cmake",
+		"C:/Users/leolo/Desktop/lol/build/tools/cmake_install.cmake"
+	],
+	"Parallel" : false
+}
