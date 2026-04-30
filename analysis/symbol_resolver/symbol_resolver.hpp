@@ -28,7 +28,10 @@ struct ModuleInfo {
  */
 class SymbolResolver {
 public:
-    using ReadCallback = std::function<bool(uint64_t physical_addr, void* buffer, size_t size)>;
+    // Reads memory at the given address. Whether `addr` is virtual or physical
+    // is decided by the caller — for kernel-EPROCESS traversal a VA-resolving
+    // callback (page-table-walker + DMA) is required, since FLINK pointers are VAs.
+    using ReadCallback = std::function<bool(uint64_t addr, void* buffer, size_t size)>;
 
     explicit SymbolResolver(ReadCallback read_fn);
 

@@ -1,5 +1,6 @@
 #include "automated_intelligence.hpp"
 #include "../scanners/entropy_scanner.hpp"
+#include "../../core/address_translation/page_table_walker.hpp"
 #include <algorithm>
 #include <cmath>
 
@@ -70,10 +71,28 @@ std::vector<ScoredRegion> AutomatedIntelligence::analyze_regions(
     return result;
 }
 
-std::vector<uint64_t> AutomatedIntelligence::find_rwx_pages(ReadCallback read_fn,
-                                                            uint64_t start, uint64_t end) {
-    (void)read_fn; (void)start; (void)end;
-    return {};
+std::vector<uint64_t> AutomatedIntelligence::find_rwx_pages(
+    std::function<bool(uint64_t, void*, size_t)> read_physical,
+    uint64_t cr3,
+    uint64_t start_va, uint64_t end_va) {
+    std::vector<uint64_t> result;
+    if (!read_physical || !cr3 || end_va <= start_va) return result;
+
+    PageTableWalker walker(read_physical);
+
+    // Walk page-by-page across the requested VA range. Skips holes quickly via
+    // PageTableWalker::translate, which returns nullopt on non-present entries.
+    start_va &= ~uint64_t(0xFFF);
+    end_va = (end_va + 0xFFF) & ~uint64_t(0xFFF);
+
+    for (uint64_t va = start_va; va < end_va; va += 0x1000) {
+        auto t = walker.translate(va, cr3);
+        if (!t || !t->valid) continue;
+        if (t->writable && t->executable) {
+            result.push_back(va);
+        }
+    }
+    return result;
 }
 
 std::vector<ScoredRegion> AutomatedIntelligence::find_high_entropy_regions(

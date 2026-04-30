@@ -9,12 +9,10 @@ if(NOT EXISTS ${IMGUI_DIR}/imgui.h)
     set(IMGUI_DIR ${imgui_SOURCE_DIR})
 endif()
 
-add_executable(dma_debugger_gui
+add_executable(dma_debugger_gui WIN32
     debugger_ui/main.cpp
     debugger_ui/memory_viewer.cpp
     debugger_ui/memory_viewer.hpp
-    debugger_ui/analysis_panel.cpp
-    debugger_ui/analysis_panel.hpp
     debugger_ui/app.cpp
     debugger_ui/app.hpp
 )

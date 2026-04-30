@@ -20,7 +20,8 @@ struct PTE {
     uint64_t prototype : 1;
     uint64_t reserved : 1;
     uint64_t page_frame : 40;
-    uint64_t reserved2 : 12;
+    uint64_t reserved2 : 11;
+    uint64_t no_execute : 1;  // bit 63 (XD/NX)
 };
 #pragma pack(pop)
 
@@ -52,7 +53,7 @@ std::optional<TranslationResult> PageTableWalker::translate(uint64_t virtual_add
         return std::nullopt;
     if (entry.large_page) {
         uint64_t pa = (entry.page_frame << 12) | (virtual_address & 0x3FFFFFFF);
-        return TranslationResult{pa, true, !entry.write, entry.write != 0, entry.user != 0};
+        return TranslationResult{pa, true, entry.no_execute == 0, entry.write != 0, entry.user != 0};
     }
     current = (entry.page_frame << 12);
 
@@ -60,7 +61,7 @@ std::optional<TranslationResult> PageTableWalker::translate(uint64_t virtual_add
         return std::nullopt;
     if (entry.large_page) {
         uint64_t pa = (entry.page_frame << 12) | (virtual_address & 0x1FFFFF);
-        return TranslationResult{pa, true, !entry.write, entry.write != 0, entry.user != 0};
+        return TranslationResult{pa, true, entry.no_execute == 0, entry.write != 0, entry.user != 0};
     }
     current = (entry.page_frame << 12);
 
@@ -71,7 +72,7 @@ std::optional<TranslationResult> PageTableWalker::translate(uint64_t virtual_add
     return TranslationResult{
         pa,
         true,
-        entry.write == 0,
+        entry.no_execute == 0,
         entry.write != 0,
         entry.user != 0
     };

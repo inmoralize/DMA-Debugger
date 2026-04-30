@@ -1,5 +1,5 @@
 # LeechCore is optional - set LEECHCORE_ROOT and link if available
-find_path(LEECHCORE_INCLUDE leechcore.h HINTS ${LEECHCORE_ROOT}/include)
+find_path(LEECHCORE_INCLUDE leechcore.h HINTS ${LEECHCORE_ROOT}/include ${LEECHCORE_ROOT})
 find_library(LEECHCORE_LIB leechcore HINTS ${LEECHCORE_ROOT}/lib ${LEECHCORE_ROOT})
 
 add_library(dma_debugger_core STATIC
