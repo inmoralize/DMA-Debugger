@@ -1,6 +1,6 @@
 # DMA Debugger
 
-A DMA-based remote memory debugger and analysis environment for reverse engineering, memory inspection, and automated analysis of remote system memory. Runs on a secondary PC connected through a DMA PCIe device (e.g., PCILeech, FPGA DMA).
+A DMA-based remote memory debugger and analysis environment for reverse engineering, memory inspection, and automated analysis of remote system memory. Runs on a secondary PC connected through a DMA PCIe device (e.g., PCILeech, FPGA DMA). I DO NOT INTEND TO UPDATE THIS REGULARLY
 
 ## Features
 
