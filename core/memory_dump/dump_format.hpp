@@ -9,8 +9,12 @@ namespace dma {
 /** Magic identifier for dump files */
 constexpr uint32_t DUMP_MAGIC = 0x444D4144;  // "DMAD"
 
-/** Current format version */
-constexpr uint32_t DUMP_VERSION = 1;
+/** Current format version — bumped to 2 for per-chunk compression support */
+constexpr uint32_t DUMP_VERSION = 2;
+
+/** Compression type stored in DumpHeader::compression */
+constexpr uint32_t DUMP_COMPRESSION_NONE = 0;
+constexpr uint32_t DUMP_COMPRESSION_LZ4  = 1;
 
 #pragma pack(push, 1)
 
@@ -20,11 +24,12 @@ struct DumpHeader {
     uint64_t total_memory = 0;
     uint64_t page_size = 4096;
     uint64_t timestamp = 0;
-    uint32_t flags = 0;           // compression, incremental, etc.
+    uint32_t flags = 0;           // reserved for future flags
     uint32_t chunk_count = 0;
     uint64_t metadata_offset = 0; // Offset to metadata section
     uint64_t index_offset = 0;    // Offset to chunk index
-    char reserved[64] = {};
+    uint32_t compression = DUMP_COMPRESSION_NONE; // DUMP_COMPRESSION_*
+    char reserved[60] = {};
 };
 
 struct ChunkIndexEntry {

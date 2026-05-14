@@ -1,0 +1,23 @@
+# CMake build directories
+build/
+build_*/
+cmake-build-*/
+
+# Compiled output
+*.o
+*.a
+*.so
+*.dll
+*.exe
+
+# IDE / editor
+.vscode/
+.idea/
+*.user
+*.suo
+*.sln.docstates
+compile_commands.json
+
+# OS
+.DS_Store
+Thumbs.db

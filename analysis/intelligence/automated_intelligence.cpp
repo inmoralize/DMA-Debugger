@@ -3,6 +3,7 @@
 #include "../../core/address_translation/page_table_walker.hpp"
 #include <algorithm>
 #include <cmath>
+#include <cstring>
 
 namespace dma {
 

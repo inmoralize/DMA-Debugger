@@ -34,7 +34,8 @@ public:
     DMAInterface& operator=(const DMAInterface&) = delete;
 
     /** Initialize DMA device with given config. Returns true on success. */
-    bool initialize(const Config& config = {});
+    bool initialize(const Config& config);
+    bool initialize() { return initialize(Config{}); }
 
     /** Shutdown and release resources */
     void shutdown();
