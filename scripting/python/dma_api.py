@@ -1,6 +1,10 @@
 """
 DMA Debugger Python API - Scriptable memory analysis and reverse engineering.
 
+ABI NOTE: The C API now uses a unified dma_context_t*. The old separate
+dma_handle_t / dump_handle_t / analyzer_handle_t types are gone. All Python
+classes below share the same underlying context pointer.
+
 Example:
     from dma_api import DMA, Analysis
 
@@ -31,120 +35,140 @@ try:
 except OSError:
     _lib = None
 
+if _lib:
+    _lib.dma_create.restype = ctypes.c_void_p
+    _lib.dma_destroy.argtypes = [ctypes.c_void_p]
+    _lib.dma_initialize.argtypes = [ctypes.c_void_p, ctypes.c_char_p, ctypes.c_char_p]
+    _lib.dma_initialize.restype = ctypes.c_int
+    _lib.dma_shutdown.argtypes = [ctypes.c_void_p]
+    _lib.dma_is_initialized.argtypes = [ctypes.c_void_p]
+    _lib.dma_is_initialized.restype = ctypes.c_int
+    _lib.dma_read.argtypes = [ctypes.c_void_p, ctypes.c_uint64, ctypes.c_void_p, ctypes.c_size_t]
+    _lib.dma_read.restype = ctypes.c_size_t
+    _lib.dma_dump.argtypes = [ctypes.c_void_p, ctypes.c_char_p]
+    _lib.dma_dump.restype = ctypes.c_uint64
+    _lib.dump_create_file.argtypes = [ctypes.c_void_p, ctypes.c_char_p]
+    _lib.dump_create_file.restype = ctypes.c_int
+    _lib.dump_open.argtypes = [ctypes.c_void_p, ctypes.c_char_p]
+    _lib.dump_open.restype = ctypes.c_int
+    _lib.dump_read.argtypes = [ctypes.c_void_p, ctypes.c_uint64, ctypes.c_void_p, ctypes.c_size_t]
+    _lib.dump_read.restype = ctypes.c_int
+    _lib.dump_close.argtypes = [ctypes.c_void_p]
+    _lib.dump_is_open.argtypes = [ctypes.c_void_p]
+    _lib.dump_is_open.restype = ctypes.c_int
+    _lib.analyzer_find_pe.argtypes = [
+        ctypes.c_void_p,
+        ctypes.POINTER(ctypes.c_uint64),
+        ctypes.POINTER(ctypes.c_uint64),
+        ctypes.c_int,
+    ]
+    _lib.analyzer_find_pe.restype = ctypes.c_int
+    _lib.analyzer_scan_pattern.argtypes = [
+        ctypes.c_void_p, ctypes.POINTER(ctypes.c_uint8), ctypes.c_size_t,
+        ctypes.POINTER(ctypes.c_uint64), ctypes.c_int,
+    ]
+    _lib.analyzer_scan_pattern.restype = ctypes.c_int
+    _lib.analyzer_list_processes.argtypes = [
+        ctypes.c_void_p, ctypes.c_uint64,
+        ctypes.POINTER(ctypes.c_uint32), ctypes.POINTER(ctypes.c_uint64),
+        ctypes.c_char_p, ctypes.c_int, ctypes.c_int,
+    ]
+    _lib.analyzer_list_processes.restype = ctypes.c_int
+
 
 class DMA:
-    """DMA interface for physical memory access."""
+    """DMA interface for physical memory access. Owns the underlying dma_context_t."""
 
     def __init__(self):
-        self._handle = None
+        self._ctx = None
         if _lib:
-            _lib.dma_create.restype = ctypes.c_void_p
-            self._handle = _lib.dma_create()
+            self._ctx = _lib.dma_create()
+
+    def __del__(self):
+        self.destroy()
+
+    def destroy(self):
+        if self._ctx and _lib:
+            _lib.dma_destroy(self._ctx)
+            self._ctx = None
 
     def initialize(self, device: str = "fpga", remote: str = "") -> bool:
-        if not self._handle or not _lib:
+        if not self._ctx or not _lib:
             return False
-        _lib.dma_initialize.argtypes = [ctypes.c_void_p, ctypes.c_char_p, ctypes.c_char_p]
-        _lib.dma_initialize.restype = ctypes.c_int
         return bool(_lib.dma_initialize(
-            self._handle,
+            self._ctx,
             device.encode() if device else None,
-            remote.encode() if remote else None
+            remote.encode() if remote else None,
         ))
 
     def shutdown(self):
-        if self._handle and _lib:
-            _lib.dma_shutdown(self._handle)
+        if self._ctx and _lib:
+            _lib.dma_shutdown(self._ctx)
 
     def is_initialized(self) -> bool:
-        if not self._handle or not _lib:
-            return False
-        _lib.dma_is_initialized.restype = ctypes.c_int
-        return bool(_lib.dma_is_initialized(self._handle))
+        return bool(self._ctx and _lib and _lib.dma_is_initialized(self._ctx))
 
     def read(self, addr: int, size: int) -> bytes:
-        if not self._handle or not _lib:
+        if not self._ctx or not _lib:
             return b""
         buf = ctypes.create_string_buffer(size)
-        _lib.dma_read.argtypes = [ctypes.c_void_p, ctypes.c_uint64, ctypes.c_void_p, ctypes.c_size_t]
-        _lib.dma_read.restype = ctypes.c_size_t
-        n = _lib.dma_read(self._handle, addr, buf, size)
+        n = _lib.dma_read(self._ctx, addr, buf, size)
         return buf.raw[:n]
 
     def dump(self, path: str) -> int:
-        if not self._handle or not _lib:
+        if not self._ctx or not _lib:
             return 0
-        _lib.dma_dump.argtypes = [ctypes.c_void_p, ctypes.c_char_p]
-        _lib.dma_dump.restype = ctypes.c_uint64
-        return _lib.dma_dump(self._handle, path.encode())
+        return _lib.dma_dump(self._ctx, path.encode())
 
 
 class DumpManager:
-    """Memory dump manager."""
+    """Dump manager view over the shared dma_context_t."""
 
     def __init__(self, dma: DMA):
-        self._dma = dma
-        self._handle = None
-        if _lib and dma._handle:
-            _lib.dump_create.restype = ctypes.c_void_p
-            self._handle = _lib.dump_create(dma._handle)
+        self._ctx = dma._ctx
 
     def create_dump(self, path: str) -> bool:
-        if not self._handle or not _lib:
+        if not self._ctx or not _lib:
             return False
-        _lib.dump_create_file.argtypes = [ctypes.c_void_p, ctypes.c_char_p]
-        return bool(_lib.dump_create_file(self._handle, path.encode()))
+        return bool(_lib.dump_create_file(self._ctx, path.encode()))
 
     def open(self, path: str) -> bool:
-        if not self._handle or not _lib:
+        if not self._ctx or not _lib:
             return False
-        _lib.dump_open.argtypes = [ctypes.c_void_p, ctypes.c_char_p]
-        return bool(_lib.dump_open(self._handle, path.encode()))
+        return bool(_lib.dump_open(self._ctx, path.encode()))
 
     def read(self, addr: int, size: int) -> bytes:
-        if not self._handle or not _lib:
+        if not self._ctx or not _lib:
             return b""
         buf = ctypes.create_string_buffer(size)
-        _lib.dump_read.argtypes = [ctypes.c_void_p, ctypes.c_uint64, ctypes.c_void_p, ctypes.c_size_t]
-        _lib.dump_read.restype = ctypes.c_int
-        n = _lib.dump_read(self._handle, addr, buf, size)
+        n = _lib.dump_read(self._ctx, addr, buf, size)
         return buf.raw[:n] if n > 0 else b""
 
     def close(self):
-        if self._handle and _lib:
-            _lib.dump_close(self._handle)
+        if self._ctx and _lib:
+            _lib.dump_close(self._ctx)
+
+    def is_open(self) -> bool:
+        return bool(self._ctx and _lib and _lib.dump_is_open(self._ctx))
 
 
 class Analysis:
-    """Analysis API - processes, modules, pattern scanning."""
+    """Analysis API — processes, modules, pattern scanning."""
 
-    def __init__(self, dma: DMA, dump: DumpManager = None):
-        self._dma = dma
-        self._dump = dump
-        self._handle = None
-        if _lib and dma._handle:
-            _lib.analyzer_create.restype = ctypes.c_void_p
-            self._handle = _lib.analyzer_create(
-                dma._handle,
-                dump._handle if dump else None
-            )
+    def __init__(self, dma: DMA):
+        self._ctx = dma._ctx
 
     def list_processes(self, system_eprocess: int = 0):
-        if not self._handle or not _lib or system_eprocess == 0:
+        if not self._ctx or not _lib or system_eprocess == 0:
             return []
         max_procs = 512
         name_buf_size = 64
         pids = (ctypes.c_uint32 * max_procs)()
         cr3s = (ctypes.c_uint64 * max_procs)()
         names = ctypes.create_string_buffer(max_procs * name_buf_size)
-        _lib.analyzer_list_processes.argtypes = [
-            ctypes.c_void_p, ctypes.c_uint64,
-            ctypes.POINTER(ctypes.c_uint32), ctypes.POINTER(ctypes.c_uint64),
-            ctypes.c_char_p, ctypes.c_int, ctypes.c_int
-        ]
         n = _lib.analyzer_list_processes(
-            self._handle, system_eprocess,
-            pids, cr3s, names, max_procs, name_buf_size
+            self._ctx, system_eprocess,
+            pids, cr3s, names, max_procs, name_buf_size,
         )
         result = []
         for i in range(n):
@@ -153,31 +177,19 @@ class Analysis:
         return result
 
     def modules(self, pid: int):
-        if not self._handle or not _lib:
+        if not self._ctx or not _lib:
             return []
         max_mods = 1024
         bases = (ctypes.c_uint64 * max_mods)()
         sizes = (ctypes.c_uint64 * max_mods)()
-        _lib.analyzer_find_pe.argtypes = [
-            ctypes.c_void_p,
-            ctypes.POINTER(ctypes.c_uint64),
-            ctypes.POINTER(ctypes.c_uint64),
-            ctypes.c_int
-        ]
-        n = _lib.analyzer_find_pe(self._handle, bases, sizes, max_mods)
+        n = _lib.analyzer_find_pe(self._ctx, bases, sizes, max_mods)
         return [{"base": bases[i], "size": sizes[i]} for i in range(n)]
 
     def scan_pattern(self, pattern: bytes):
-        if not self._handle or not _lib or not pattern:
+        if not self._ctx or not _lib or not pattern:
             return []
         max_results = 4096
         results = (ctypes.c_uint64 * max_results)()
         buf = (ctypes.c_uint8 * len(pattern)).from_buffer_copy(pattern)
-        _lib.analyzer_scan_pattern.argtypes = [
-            ctypes.c_void_p, ctypes.POINTER(ctypes.c_uint8), ctypes.c_size_t,
-            ctypes.POINTER(ctypes.c_uint64), ctypes.c_int
-        ]
-        n = _lib.analyzer_scan_pattern(
-            self._handle, buf, len(pattern), results, max_results
-        )
+        n = _lib.analyzer_scan_pattern(self._ctx, buf, len(pattern), results, max_results)
         return list(results[:n])

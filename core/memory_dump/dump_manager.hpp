@@ -38,13 +38,14 @@ public:
 
     /** Create full memory dump */
     bool create_dump(const std::string& output_path,
-                    const DumpConfig& config = {},
+                    const DumpConfig& config,
                     std::function<void(uint64_t done, uint64_t total)> progress = {});
+    bool create_dump(const std::string& output_path) { return create_dump(output_path, DumpConfig{}); }
 
     /** Create incremental dump (only changed pages since base_dump) */
     bool create_incremental_dump(const std::string& output_path,
                                 const std::string& base_dump_path,
-                                const DumpConfig& config = {},
+                                const DumpConfig& config,
                                 std::function<void(uint64_t done, uint64_t total)> progress = {});
 
     /** Create differential dump between two dumps */

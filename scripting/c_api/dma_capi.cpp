@@ -7,105 +7,82 @@
 #include <cstring>
 #include <vector>
 
-static std::unique_ptr<dma::DMAInterface> g_dma;
-static std::unique_ptr<dma::DumpManager> g_dump;
-static std::unique_ptr<dma::StaticAnalyzer> g_analyzer;
-static std::unique_ptr<dma::SymbolResolver> g_resolver;
+struct dma_context {
+    std::unique_ptr<dma::DMAInterface>  dma;
+    std::unique_ptr<dma::DumpManager>   dump;
+    std::unique_ptr<dma::StaticAnalyzer> analyzer;
+    std::unique_ptr<dma::SymbolResolver> resolver;
+};
 
 extern "C" {
 
-dma_handle_t dma_create(void) {
-    g_dma = std::make_unique<dma::DMAInterface>();
-    return g_dma.get();
+dma_context_t* dma_create(void) {
+    auto* ctx = new dma_context();
+    ctx->dma      = std::make_unique<dma::DMAInterface>();
+    ctx->dump     = std::make_unique<dma::DumpManager>(ctx->dma.get());
+    ctx->analyzer = std::make_unique<dma::StaticAnalyzer>(ctx->dma.get(), ctx->dump.get());
+    return ctx;
 }
 
-void dma_destroy(dma_handle_t h) {
-    (void)h;
-    g_analyzer.reset();
-    g_dump.reset();
-    g_dma.reset();
+void dma_destroy(dma_context_t* ctx) {
+    delete ctx;
 }
 
-int dma_initialize(dma_handle_t h, const char* device, const char* remote) {
-    if (!h) return 0;
+int dma_initialize(dma_context_t* ctx, const char* device, const char* remote) {
+    if (!ctx) return 0;
     dma::DMAInterface::Config cfg;
     if (device) cfg.device_type = device;
-    if (remote) cfg.remote = remote;
-    return static_cast<dma::DMAInterface*>(h)->initialize(cfg) ? 1 : 0;
+    if (remote)  cfg.remote     = remote;
+    return ctx->dma->initialize(cfg) ? 1 : 0;
 }
 
-void dma_shutdown(dma_handle_t h) {
-    if (h) static_cast<dma::DMAInterface*>(h)->shutdown();
+void dma_shutdown(dma_context_t* ctx) {
+    if (ctx) ctx->dma->shutdown();
 }
 
-int dma_is_initialized(dma_handle_t h) {
-    return (h && static_cast<dma::DMAInterface*>(h)->is_initialized()) ? 1 : 0;
+int dma_is_initialized(dma_context_t* ctx) {
+    return (ctx && ctx->dma->is_initialized()) ? 1 : 0;
 }
 
-size_t dma_read(dma_handle_t h, uint64_t addr, void* buf, size_t size) {
-    if (!h || !buf) return 0;
-    return static_cast<dma::DMAInterface*>(h)->read(addr, buf, size);
+size_t dma_read(dma_context_t* ctx, uint64_t addr, void* buf, size_t size) {
+    if (!ctx || !buf) return 0;
+    return ctx->dma->read(addr, buf, size);
 }
 
-uint64_t dma_dump(dma_handle_t h, const char* path) {
-    if (!h || !path) return 0;
-    return static_cast<dma::DMAInterface*>(h)->dump_memory(path);
+uint64_t dma_dump(dma_context_t* ctx, const char* path) {
+    if (!ctx || !path) return 0;
+    return ctx->dma->dump_memory(path);
 }
 
-dump_handle_t dump_create(dma_handle_t dma) {
-    if (!dma) return nullptr;
-    g_dump = std::make_unique<dma::DumpManager>(static_cast<dma::DMAInterface*>(dma));
-    return g_dump.get();
+int dump_create_file(dma_context_t* ctx, const char* path) {
+    if (!ctx || !path) return 0;
+    return ctx->dump->create_dump(path) ? 1 : 0;
 }
 
-void dump_destroy(dump_handle_t h) {
-    (void)h;
-    g_analyzer.reset();
-    g_dump.reset();
+int dump_open(dma_context_t* ctx, const char* path) {
+    if (!ctx || !path) return 0;
+    return ctx->dump->open_dump(path) ? 1 : 0;
 }
 
-int dump_create_file(dump_handle_t h, const char* path) {
-    if (!h || !path) return 0;
-    return static_cast<dma::DumpManager*>(h)->create_dump(path) ? 1 : 0;
-}
-
-int dump_open(dump_handle_t h, const char* path) {
-    if (!h || !path) return 0;
-    return static_cast<dma::DumpManager*>(h)->open_dump(path) ? 1 : 0;
-}
-
-int dump_read(dump_handle_t h, uint64_t addr, void* buf, size_t size) {
-    if (!h || !buf) return 0;
-    auto opt = static_cast<dma::DumpManager*>(h)->read(addr, size);
+int dump_read(dma_context_t* ctx, uint64_t addr, void* buf, size_t size) {
+    if (!ctx || !buf) return 0;
+    auto opt = ctx->dump->read(addr, size);
     if (!opt || opt->size() > size) return 0;
     memcpy(buf, opt->data(), opt->size());
     return static_cast<int>(opt->size());
 }
 
-void dump_close(dump_handle_t h) {
-    if (h) static_cast<dma::DumpManager*>(h)->close();
+void dump_close(dma_context_t* ctx) {
+    if (ctx) ctx->dump->close();
 }
 
-int dump_is_open(dump_handle_t h) {
-    return (h && static_cast<dma::DumpManager*>(h)->is_open()) ? 1 : 0;
+int dump_is_open(dma_context_t* ctx) {
+    return (ctx && ctx->dump->is_open()) ? 1 : 0;
 }
 
-analyzer_handle_t analyzer_create(dma_handle_t dma, dump_handle_t dump) {
-    if (!dma) return nullptr;
-    g_analyzer = std::make_unique<dma::StaticAnalyzer>(
-        static_cast<dma::DMAInterface*>(dma),
-        dump ? static_cast<dma::DumpManager*>(dump) : nullptr);
-    return g_analyzer.get();
-}
-
-void analyzer_destroy(analyzer_handle_t h) {
-    (void)h;
-    g_analyzer.reset();
-}
-
-int analyzer_find_pe(analyzer_handle_t h, uint64_t* bases, uint64_t* sizes, int max_count) {
-    if (!h || !bases || !sizes || max_count <= 0) return 0;
-    auto mods = static_cast<dma::StaticAnalyzer*>(h)->find_pe_images();
+int analyzer_find_pe(dma_context_t* ctx, uint64_t* bases, uint64_t* sizes, int max_count) {
+    if (!ctx || !bases || !sizes || max_count <= 0) return 0;
+    auto mods = ctx->analyzer->find_pe_images();
     int n = 0;
     for (const auto& m : mods) {
         if (n >= max_count) break;
@@ -116,11 +93,11 @@ int analyzer_find_pe(analyzer_handle_t h, uint64_t* bases, uint64_t* sizes, int 
     return n;
 }
 
-int analyzer_scan_pattern(analyzer_handle_t h, const uint8_t* pattern, size_t pattern_len,
+int analyzer_scan_pattern(dma_context_t* ctx, const uint8_t* pattern, size_t pattern_len,
                           uint64_t* results, int max_results) {
-    if (!h || !pattern || !results || max_results <= 0) return 0;
+    if (!ctx || !pattern || !results || max_results <= 0) return 0;
     std::vector<uint8_t> pat(pattern, pattern + pattern_len);
-    auto res = static_cast<dma::StaticAnalyzer*>(h)->scan_pattern("", pat, {});
+    auto res = ctx->analyzer->scan_pattern("", pat, {});
     int n = 0;
     for (const auto& r : res) {
         if (n >= max_results) break;
@@ -129,18 +106,17 @@ int analyzer_scan_pattern(analyzer_handle_t h, const uint8_t* pattern, size_t pa
     return n;
 }
 
-int analyzer_list_processes(analyzer_handle_t h, uint64_t system_eprocess,
+int analyzer_list_processes(dma_context_t* ctx, uint64_t system_eprocess,
                             uint32_t* pids, uint64_t* cr3s, char* names,
                             int max_count, int name_buf_size) {
-    (void)h;
-    if (!pids || !cr3s || !names || max_count <= 0 || name_buf_size <= 0) return 0;
-    if (!g_dma || !g_dma->is_initialized()) return 0;
+    if (!ctx || !pids || !cr3s || !names || max_count <= 0 || name_buf_size <= 0) return 0;
+    if (!ctx->dma->is_initialized()) return 0;
 
-    g_resolver = std::make_unique<dma::SymbolResolver>(
-        [dma = g_dma.get()](uint64_t pa, void* buf, size_t sz) {
+    ctx->resolver = std::make_unique<dma::SymbolResolver>(
+        [dma = ctx->dma.get()](uint64_t pa, void* buf, size_t sz) {
             return dma->read(pa, buf, sz) == sz;
         });
-    auto procs = g_resolver->get_process_list(system_eprocess);
+    auto procs = ctx->resolver->get_process_list(system_eprocess);
     int n = 0;
     for (const auto& p : procs) {
         if (n >= max_count) break;

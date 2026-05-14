@@ -1,7 +1,8 @@
 #include "dynamic_analyzer.hpp"
 #include "../../core/dma_interface/dma_interface.hpp"
-#include <chrono>
 #include <algorithm>
+#include <chrono>
+#include <cstring>
 
 namespace dma {
 
